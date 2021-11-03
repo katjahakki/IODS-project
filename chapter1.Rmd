@@ -1,7 +1,27 @@
 
-# About the project
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+# **Introduction to Open Data Science - Course Project**
+
+### **This course has three big themes**  
+
+* open data  
+* open science  
+* data science  
+
+### **After completing the course students**   
+
+* understand possibilities of open science, open data, and open research tools
+* master state-of-the-art, open and free software tools: RStudio and GitHub
+* write dynamic reports (text, code, graphs, tables, etc.) in R Markdown
+* apply the principle of reproducible research and see its practical advantages
+* visualize and analyze data sets with some fairly advanced statistical methods
+* learn much more of all this in the future (continuous learning)
+
+### **My introduction**
+I'm a PhD Candidate at University of Eastern Finland (Doctoral Programme of Clinical Research) doing pharmacogenomic research. We use population level health registry and genomic data in our research and I'm expecting to learn new tools and tips for coding and statistical analysis of big data during this course. Couple of other PhD students recommended this course as useful.
+
+My GitHub repository can be found here:
+https://github.com/katjahakki/IODS-project
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
@@ -9,5 +29,5 @@
 date()
 
 ```
-The text continues here.
+
 
