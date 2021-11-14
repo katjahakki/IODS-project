@@ -122,9 +122,9 @@ The plot and the regression line indicate a linear relationship between student'
 ### **3. Fitting a regression model**
 
 
-Simple linear regression models the relationship between the magnitude of one variable and that of a second - for example, as X increases, Y also increases. Or as X increases, Y decreases. Regression quantifies the nature of the relationship between the variables. The simple linear regression estimates how much Y will change when X changes by a certain amount. With regression, we predict the Y variable from X using a linear relationship. 
+**Simple linear regression** models the relationship between the magnitude of one variable and that of a second - for example, as X increases, Y also increases. Or as X increases, Y decreases. Regression quantifies the nature of the relationship between the variables. The simple linear regression estimates how much Y will change when X changes by a certain amount. With regression, we predict the Y variable from X using a linear relationship. 
 
-When there are more than one explanatory variables in the linear model, it is called multiple regression. The response variable is assumed to be normally distributed with a mean that is linear function of the explanatory variables, and a variance that is independent of them.
+When there are more than one explanatory variables in the linear model, it is called **multiple regression**. The response variable is assumed to be normally distributed with a mean that is linear function of the explanatory variables, and a variance that is independent of them.
 
 Let's fit a multiple linear regression model where exam points is the target variable (Y) and age, attitude and stra are the explanatory variables (X variables) and then print out the summary of the fitted model.
 

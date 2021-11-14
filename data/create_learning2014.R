@@ -173,7 +173,6 @@ my_model <- lm(points ~ age + attitude + stra,  data = learning2014)
 # summary of the fitted model
 summary(my_model)
 
-
 # fit a regression model with statistically significant explanatory variables
 my_model2 <- lm(points ~ attitude,  data = learning2014)
 
@@ -191,11 +190,4 @@ par(mfrow = c(2,2))
 
 plot(my_model2, which = c(1, 2, 5))
 
-# Explain the assumptions of the model and interpret the validity
-# of those assumptions based on the diagnostic plots. 
 
-## muista selittää myös gender jos se on malleissa
-## löytyisikö muita extratapoja mallintaa dataa?? 
-
-# gender and age are binary variables
-# Points variable contains total exam points
