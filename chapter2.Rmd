@@ -1,13 +1,200 @@
-# Insert chapter 2 title here
+# **Regression and model validation**
 
-*Describe the work you have done this week and summarize your learning.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+### **1. Structure of the data**
+
+
+The original data file contains JYTOPKYS2 survey data concerning learning and teaching in a statistical course and reference to the data source can be found here https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS2-meta.txt. A new analysis dataset learning2014 was created with variables gender, age, attitude, deep, stra, surf and points by combining questions from the original data file. All combination variables were scaled to the original scales by taking the mean and observations with exam points being zero were excluded.
+
+The learning2014 dataset is a dataframe with 166 observations and 7 variables. The observations represent students in the statistical course (rows) and each column contains values of one variable.
+
+Meaning of the variable abbreviations:   
+attitude = attitude towards statistics   
+deep = deep learning   
+stra = strategic learning   
+surf = surface learning   
+points = total points of the course exam   
+
 
 ```{r}
+
+### RStudio exercise 2 - The Analysis exercise
 date()
+
+# read in data,  learning2014.csv file, using read.csv()
+learning2014 <- read.csv('~/IODS-project/data/learning2014.csv')
+
+# show first 6 observations of the data
+head(learning2014)
+
+# data structure
+str(learning2014)
+
+# data dimensions, rows and columns
+dim(learning2014)
+# number of rows in the data
+nrow(learning2014)
+# number of columns in the data
+ncol(learning2014)
+
 ```
 
-Here we go again...
+Summary() function is a generic R function which produces **basic statistics** of the data. The function is also used to produce result summaries of the results of various model fitting functions.
+
+```{r}
+# summaries, basic statistics of the variables
+summary(learning2014)
+
+# distribution of female and male students
+summary(as.factor(learning2014$gender))
+```
+
+Majority of the students are female students. We can see the minimum, first quartile, median, third quartile and maximum values of the numeric variables with the summary function.
+
+
+### **2. Graphical overview of the data**
+
+
+Let's draw **a scatter plot matrix** of the data.
+
+
+```{r}
+# change variable gender from character to factor in order to draw a scatter plot
+learning2014$gender = as.factor(learning2014$gender)
+
+# draw a scatter plot matrix of the variables in learning2014
+# [-1] excludes the first column (gender)
+pairs(learning2014[-1], col=learning2014$gender)
+
+```
+
+Scatter plot matrices are a way to roughly determine if you have a linear correlation between multiple variables. The variables are in a diagonal line from top left to bottom right and each variable are plotted against each other. The boxes on the upper right of the scatter plot are mirror images of the plots on the lower left.
+
+
+Let's create **a more advanced plot matrix** of the data.
+
+```{r}
+# access the GGally and ggplot2 libraries
+#install.packages("GGally")
+library(GGally)
+library(ggplot2)
+
+# create plot matrix with ggpairs()
+# Adjust the argument mapping of ggpairs() by defining col = gender inside aes().
+# Adjust the code a little more: add another aesthetic element alpha = 0.3 inside aes().
+p <- ggpairs(learning2014, mapping = aes(col = gender, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+
+# draw the plot
+p
+```
+
+The plot matrix can be used to visualize variable relationships for several variables in a single plot. Scatter plots of each pair of numeric variable are drawn on the left part of the plot, pearson correlation is shown on the right and variable distribution is displayed on the diagonal.
+This plot shows all data separately for female (red color) and male (green color) students. Up row shows boxplots and column on the left shows histograms of the variables. The boxplots display the distribution of data based on a five number summary: minimun, first quartile, median, third quartile and maximum. Outliers are shown as points outside of the boxes.
+
+The strongest correlation is between points and attitude variables. When looking at the diagonal distributions, the age variable has a right-skewed distribution, the students are mainly of young age. The barplot in the up left corner shows the gender distribution, female students are the majority group.
+
+Let's draw a **scatter plot** of student's attitude versus exam points with a **regression line**.
+
+```{r}
+# Access the ggplot2 library
+library(ggplot2)
+
+# initialize plot with data and aesthetic mapping
+p1 <- ggplot(learning2014, aes(x = attitude, y = points, col = gender))
+
+# define the visualization type (points)
+p2 <- p1 + geom_point()
+
+# add a regression line
+p3 <- p2 + geom_smooth(method = "lm")
+
+# add a main title and draw the plot
+p4 <- p3 + ggtitle("Student's attitude versus exam points")
+
+# draw the plot
+p4
+
+```
+
+The plot and the regression line indicate a linear relationship between student's attitude and exam points for both female and male students.
+
+
+### **3. Fitting a regression model**
+
+
+Simple linear regression models the relationship between the magnitude of one variable and that of a second - for example, as X increases, Y also increases. Or as X increases, Y decreases. Regression quantifies the nature of the relationship between the variables. The simple linear regression estimates how much Y will change when X changes by a certain amount. With regression, we predict the Y variable from X using a linear relationship. 
+
+When there are more than one explanatory variables in the linear model, it is called multiple regression. The response variable is assumed to be normally distributed with a mean that is linear function of the explanatory variables, and a variance that is independent of them.
+
+Let's fit a multiple linear regression model where exam points is the target variable (Y) and age, attitude and stra are the explanatory variables (X variables) and then print out the summary of the fitted model.
+
+```{r}
+# fit a regression model, exam points is the target (dependent) variable
+my_model <- lm(points ~ age + attitude + stra,  data = learning2014)
+
+# summary of the fitted model
+summary(my_model)
+
+```
+
+The question is does age, attitude or stra variables explain the amount of exam points?
+
+We can see from the summary that the attitude variable has a statistically significant p-value. That means the variable attitude has a statistically significant relationship with the target variable points. The variables age and stra are not statistically significant, the p-values are > 0.1, meaning that these variables do not have a statistically significant relationship with the target variable points. 
+
+Let's remove age and stra variables from the model and fit a model again without them. The points is the target variable and the attitude is the explanatory variable.
+
+```{r}
+# fit a regression model with statistically significant explanatory variable
+my_model2 <- lm(points ~ attitude,  data = learning2014)
+```
+
+
+### **4. Interpretting the model parameters**
+
+
+Let's print the summary of the simple regression model.
+
+```{r}
+# summary of the fitted my_model2
+summary(my_model2)
+
+```
+
+In the summary statistics of the regression model, call shows what function and parameters were used to create the model. Residuals show the difference between what the model predicted and the actual value of y. The coefficient estimate contains two rows, the intercept and the slope.The intercept is the expected mean value of Y when X=0. The coefficient standard error measures the average amount that the coefficient estimates vary from the actual average value of the target variable. The coefficient t-value is a measure of how many standard deviations the coefficient estimate is far from 0. The Pr(>t) in the model output relates to the probability of observing any value equal or larger than t. 
+
+A small p-value indicates that is unlikely to observe a relationship between the explanatory and target variables due to chance. Three stars in 'signif.Codes' represent a highly significant p-value (<0.05).
+
+We can see an estimate 3.5 for the attitude variable which means that if attitude towards statistics score increases by 1 then student's exam points increase by 3.5 points. 
+
+Residual standard error is measure of a linear regression fit and F-statistic is used to indicate whether there is a relationship between the predictor and the response variables. Multiple R-squared ranges from 0 to 1 and measures the proportion of variation in the data that is accounted for in the model, it's used to assess how well the model fits the data. In this case, 19.06% of the variation in exam points is explained by the variation in attitude towards statistics.
+
+### **5. Diagnostic plots of the regression model**
+
+
+Let's draw **diagnostic plots** for the regression model.
+
+
+```{r}
+# Produce the following diagnostic plots: Residuals vs Fitted values,
+# Normal QQ-plot and Residuals vs Leverage
+
+par(mfrow = c(2,2))
+
+plot(my_model2, which = c(1, 2, 5))
+
+```
+
+
+In a linear regression model an assumption is linearity: the target variable is modeled as a linear combination of the mode parameters. Usually it is assumed that the errors are normally distributed. By analyzing the residuals of the model we can explore the validity of the model assumptions. It is also assumed that the errors are not correlated, they have constant variance and the size of a given error does not depend on the explanatory variables. 
+
+
+**Residuals vs Fitted values**   
+The constant variance assumption implies that the size of the errors should not depend on the explanatory variables. This can be checked with a scatter plot of residuals versus model predictions. A residual is a measure of how well line fits an individual data point. The closer a data point's residual is to 0, the better fit. The linearity seems to mainly hold as the red line is close to the dashed line in the plot. Potential problematic cases are with the row numbers 35, 56 and 145.
+
+
+**Normal QQ-plot, normality of the errors**   
+QQ-plot of the residuals is a method to explore the assumption that the errors of the model are normally distributed. In the plot the data points seem to be approximately forming a line according to the dash line verifying the assumption of the residual being normally distributed. Potential problematic cases are with the row numbers 35, 56 and 145.
+
+
+**Residuals vs Leverage, leverage of observations**   
+Leverage measures how much impact a single observation has on the model and the residuals vs leverage plot can be used to identify which observations have an unusually high impact. In the plot most of the cases are well inside of the Cook's distance lines and the red line follows the dashed line quite well. It seems there's no major impact of single observations on the model. When data points are outside of a dashed line, Cook's distance, the cases may be influential to the regression results. Potential problematic cases are with the row numbers 35, 56 and 71. 
