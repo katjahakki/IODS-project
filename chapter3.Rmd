@@ -1,0 +1,236 @@
+
+
+# **Logistic regression**
+
+### **1. Structure of the data**
+
+The data are from two identical questionnaires related to secondary school student alcohol comsumption in Portugal. Data source can be found here: UCI Machine Learning Repository (http://archive.ics.uci.edu/ml/dataset). Metadata is available at: https://archive.ics.uci.edu/ml/datasets/Student+Performance. 
+
+A new analysis dataset pormath was created by joining math course and Portuguese language course datasets. The two data sets were joined using all other variables than "failures", "paid", "absences", "G1", "G2", "G3" as (student) identifiers. 
+
+```{r}
+## RStudio Exercise 3: Analysis
+date()
+
+# read in the joined student alcohol consumption data pormath, using read.csv()
+pormath <- read.csv('~/IODS-project/data/pormath.csv')
+
+# introduction of the dataset pormath, structure of the data
+str(pormath)
+
+# print out names of the variables
+colnames(pormath)
+
+# rows and columns in the dataset
+dim(pormath)
+
+```
+
+The pormath dataset is a dataframe with 370 observations (rows) and 51 variables (columns). The observations represent students and each column contains values of one variable. 
+
+
+### **2. Variables for logistic regression analysis**
+
+Let's choose 4 variables and create hypotheses for logistic regression.
+
+**The variables:**   
+freetime: free time after school (numeric: from 1 - very low to 5 - very high)   
+absences: number of school absences (numeric: from 0 to 93)   
+age: student's age (numeric: from 15 to 22)   
+goout: going out with friends (numeric: from 1 - very low to 5 - very high)   
+
+**The hypotheses:**   
+**1**: students with free time have a higher probability to high alcohol consumption than students with less free time   
+**2**: students with absences have a higher probability to consume more alcohol than students with less absences   
+**3**: older students have a higher probability to high alcohol consumption than younger students   
+**4**: students who go out with friends have a higher probability to high alcohol consumption than students who go out less with their friends   
+
+
+### **3. Numerical and graphical overview of the variables**
+
+Numerical overview of the data can be done for example by exploring the **frequencies of the variables in cross tables** and **basic statistic summaries** of the variables using table() and summary() R functions.
+
+```{r}
+## frequencies of the variables, cross tables
+
+# low and high alcohol consumption
+summary(as.factor(pormath$high_use))
+
+# alcohol consumption and freetime 
+table(high_use = pormath$high_use, freetime = pormath$freetime)
+
+# alcohol consumption and absences
+table(high_use = pormath$high_use, absences = pormath$absences)
+
+# alcohol consumption and age
+table(high_use = pormath$high_use, age = pormath$age)
+
+# alcohol consumption and going out with friends
+table(high_use = pormath$high_use, goout = pormath$goout)
+```
+
+In these two-dimensional frequency cross tables we can see the questionnaire results as frequencies of the entire group of students concerning the two chosen variables in each table. We can see that 111 out of 370 (34,7%) students report high use of alcohol. Students' alcohol 'high_use' is TRUE if 'alc_use' is higher than 2 and FALSE otherwise.
+
+```{r}
+# select variables freetime, absences, age, goout for joined summary statistics
+myvars <- c("freetime", "absences", "age", "goout")
+new_pormath <- pormath[myvars]
+# print basic statistic summary
+summary(new_pormath)
+
+# access library psych
+library(psych)
+# create summary table
+describe(pormath[ , c('freetime', 'absences', 'age', 'goout')], fast = TRUE)
+```
+
+We can see the minimum, first quartile, median, third quartile and maximum values of the freetime, absences, age and goout variables with the summary function. Summary table created with describe() function outputs also column number (vars), number of valid cases (n), standard deviation (sd) and standard error (se) for the variables.
+
+
+Let's draw **bar plots** for each variable.
+
+```{r}
+## bar plots to describe distributions of the variables
+
+# access the libraries tidyr, dplyr, ggplot2 and cowplot
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+
+# bar plots for each variable
+g1 <- ggplot(pormath, aes(x = high_use, fill = sex)) + geom_bar()
+g2 <- ggplot(pormath, aes(x = freetime, fill = sex)) + geom_bar()
+g3 <- ggplot(pormath, aes(x = absences, fill = sex)) + geom_bar()
+g4 <- ggplot(pormath, aes(x = age, fill = sex)) + geom_bar()
+g5 <- ggplot(pormath, aes(x = goout, fill = sex)) + geom_bar()
+
+# draw all bar plots
+plot_grid(g1, g2, g3, g4, g5, labels="AUTO")
+
+```
+
+The bar plots show counts for each variable by gender. Approximately third of the students report high alcohol consumption and of those students the majority are the male students. Most of the students have average (3) or high amount (4) of freetime after school and have approximately 0 to 14 of absences. Majority of the students are between 15 to 18 years of age and the gender distribution is roughly even for male and female students. Going out with friends vary mainly from low (2) to very high (5)
+
+
+Let's draw **box plots** to see the relationships of the variables with the alcohol consumption
+
+```{r}
+## box plots to describe distributions of the variables
+# box plots of the variables
+
+g6 <- ggplot(pormath, aes(x = high_use, y = freetime, col = sex)) + geom_boxplot() + ylab("freetime")
+g7 <- ggplot(pormath, aes(x = high_use, y = absences, col = sex)) + geom_boxplot() + ylab("absences")
+g8 <- ggplot(pormath, aes(x = high_use, y = age, col = sex)) + geom_boxplot() + ylab("age")
+g9 <- ggplot(pormath, aes(x = high_use, y = goout, col = sex)) + geom_boxplot() + ylab("goout")
+
+# draw boxplots
+plot_grid(g6, g7, g8, g9, labels = "AUTO")
+```
+
+In the box plots the median marks the mid-point of the data and is shown by the line that divides the box into two parts. Half the data points are greater than or equal to this value and half are less. The middle “box” represents the middle 50% of data points for the analysis group. Outliers are shown as dots outside the boxes. The box plots display the distribution of the data, if the data is symmetrical, how tightly the data is grouped and if and how the data is skewed. The whiskers are the two lines outside the box, that go from the minimum to the lower quartile (the start of the box) and then from the upper quartile (the end of the box) to the maximum.
+
+We can see from the box plots that:   
+**High alcohol consumption and freetime**   
+- females with low alcohol consumption have greater variability in freetime and less freetime than males with low or high alcohol consumption or females with high alcohol consumption. Roughly it seems that amount of freetime after school doesn't influence much on alcohol consumption.   
+**High alcohol consumption and absences**   
+- the number of absences is higher for both females and males who report high alcohol consumption.   
+**High alcohol consumption and age**   
+- males with high alcohol use are a bit older than males with low alcohol consumption.   
+**High alcohol consumption and going out with friends**   
+- both female and male students who go out more with friends have higher alcohol consumption.   
+
+Based on these box plots hypothesis number 2 (students with more absences consume more alcohol than students with less absences) and number 4 (students who go out with friends consume more alcohol than students who go out less with their friends) could hold. The hypothesis 3 (older students consume more alcohol than younger students) might not hold for the whole group of students. 
+
+### **4. Fitting the logistic regression model**
+
+The logistic regression model is a genearalized linear model (GLM). It can be used to assess the effects of a set of explanatory variables on a binary response variable. The response in the logistic regression formula is the log odds of a binary outcome of 1.
+
+Let's fit the logistic regression model. The binary high/low alcohol consumption variable is the target variable. In R, to fit a logistic regression, the glm function is used with the family parameter set to binomial.
+
+```{r}
+# create logistic regression model
+model <- glm(high_use ~ freetime + absences + age + goout, data = pormath, family = "binomial")
+
+# print summary of the model
+summary(model)
+```
+
+In the summary of the logistic regression model, call shows the function and parameters used to create the model. Deviance is a measure of goodness of fit of a genearalized linear model. The null deviance shows how well the target variable is predicted by the model that includes only the intercept. The residual deviance shows how well the response variable can be predicted by a model with predictor variables.
+
+**High alcohol consumption and absences**   
+Each unit increase in absences increases the log odds of high alcohol consumption by 0.0766 and p-value indicates that it is statistically significant in determining the high alcohol consumption
+
+**High alcohol consumption and going out with friends**   
+Each unit increase in going out with friends increases the log odds of high alcohol consumption by 0.672 and p-value indicates that it is statistically significant in determining the high alcohol consumption
+
+The variables freetime and age are not statistically significant, meaning that these variables do not have a statistically significant relationship with the binary target variable high/low alcohol consumption.
+
+The estimated parameters in the logistic regression model can be interpreted in terms of odds and odds ratios. The exponents of the coefficients of a logistic regression model can be interpret as odds ratios between a unit change (vs no change) in the corresponding explanatory variable. Let's print the coefficients of the model as **odds ratios** and **confidence intervals** for them.
+
+```{r}
+# model with statistically significant variables
+model2 <- glm(high_use ~ absences + goout, data = pormath, family = "binomial")
+
+# print the coefficients of the model
+coef(model2)
+
+# compute odds ratios (OR)
+OR <- coef(model2) %>% exp
+
+# compute confidence intervals (CI)
+CI <- confint(model2) %>% exp
+
+# print out the odds ratios with their 95% confidence intervals
+cbind(OR, CI)
+```
+
+The odds ratio (OR) 1.08 with confidence intervals 1.035 to 1.13 for absences means that there is a 3.5% to 13% increase in the odds that students with absences have a higher alcohol consumption compared to students with less absences.
+
+The odds ratio (OR) 2.08 with confidence intervals 1.66 to 2.64 for goout variable means that there is 1.7 to 2.6 times the odds of high alcohol consumption for students who go out with friends compared to students who go out less with their friends.
+
+
+### **5. Interpreting the predictive power of the logistic regression model**
+
+Let's explore the predictive power of the logistic regression model to know how well the model actually predicts the target value. 
+
+```{r}
+# fit the model
+model2 <- glm(high_use ~ absences, goout, data = pormath, family = "binomial")
+
+# predict the probability of high_use
+probabilities <- predict(model2, type = "response")
+
+# add the predicted probabilities to pormath
+pormath <- mutate(pormath, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+pormath <- mutate(pormath, prediction = probability > 0.5)
+
+# tabulate the target variable versus the predictions (2x2 cross table)
+table(high_use = pormath$high_use, prediction = pormath$prediction)
+
+# initialize a plot of 'high_use' versus 'probability' in 'pormath'
+g <- ggplot(pormath, aes(x = probability, y = high_use, col = prediction))
+
+# define the geom as points and draw the plot
+g + geom_point()
+
+# tabulate the target variable versus the predictions
+table(high_use = pormath$high_use, prediction = pormath$prediction) %>% prop.table %>% addmargins
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = pormath$high_use, prob = 0)
+
+```
+
+The first 2x2 cross table is a confusion matrix of predictions versus the actual values of high use of alcohol. The plot displays a graphic visualizing of the actual values and the predictions. The second cross table presents the target variable versus the predicted probabilities. In the tables the predicted outcomes are columns and the true outcomes are the rows. The diagonal elements of the tables show the correct predictions and the off-diagonal elements show the incorrect predictions. 
+
+The total proportion of inaccurately classified individuals (the training error) is 0.3 meaning that the model classifies incorrectly roughly 30% of the observations.
+
