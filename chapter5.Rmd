@@ -1,0 +1,208 @@
+
+# **Dimensionality reduction techniques**
+
+### **1. Overview of the data**
+
+
+The original data is from the United Nations Development Programme and information of the data can be found via these links:
+http://hdr.undp.org/en/content/human-development-index-hdi
+http://hdr.undp.org/sites/default/files/hdr2015_technical_notes.pdf
+https://raw.githubusercontent.com/TuomoNieminen/Helsinki-Open-Data-Science/master/datasets/human_meta.txt
+
+The selected variable names have been shortened and two new variables have been computed. Observations with missing values have been removed, observations indicating regions instead of countries have been removed, the original Country variable has been removed and the countries have been computed as row names of the dataframe. The dataframe has now 8 variables (columns) and 155 observations (rows).
+
+**Meaning of the variable abbreviations**:   
+ratio_sec_edu = ratio: proportion of females with at least secondary education / 
+                        proportion of males with at least secondary education
+ratio_labour = ratio: proportion of females in the labour force / 
+                      proportion of males in the labour force   
+life_exp_birth = life expectancy at birth   
+exp_years_edu = expected years at schooling   
+GNI_per_capita = Gross National Income per capita   
+mat_mort_ratio = maternal mortality ratio   
+adol_birth_rate = adolescent birth rate   
+repr_parl = percetange of female representatives in parliament
+
+
+```{r}
+## RStudio Exercise 5: Analysis
+date()
+
+# read in human data
+human <- read.table('~/IODS-project/data/human.csv')
+
+# first six observations of the human data
+head(human)
+
+# structure of the human data
+str(human)
+
+# basic statistics of the human data
+summary(human)
+```
+
+
+Let's **visualize** the data with ggpairs() and corrplot function.
+
+
+```{r}
+# access GGally
+library(GGally)
+# access dplyr
+library(dplyr)
+# access corrplot
+library(corrplot)
+
+# visualize the human data variables
+ggpairs(human)
+```
+
+
+The **correlation matrix** done with ggpairs() shows scatter plots of each pair of numeric variable, drawn on the left part of the plot, pearson correlation is shown on the right and variable distribution is displayed on the diagonal. The strongest positive correlation is between exp_years_edu - life_exp_birth and adol_birth_rate - mat_mort_ratio variable pairs. The strongest negative correlation is between mat_mort_ratio - life_exp_birth and mat_mort_ratio and exp_years_edu variable pairs. When looking at the diagonal distributions, the GNI_per_capita, mat_mort_ratio, adol_birth_rate and repr_parl variables have a right-skewed distribution. The ratio_sec_edu, ratio_labour and life_exp_birth variables have a left_skewed distribution. The exp_years_edu variable has a normal distribution.
+
+```{r}
+# compute the correlation matrix and visualize it with corrplot
+cor(human) %>% corrplot
+```
+
+
+To study **linear connections**, correlations can also be computed with the cor() function and then visualized with the **corrplot** function from the corrplot package. The variables are in a diagonal line from top left to bottom right and each variable are plotted against each other. The boxes on the upper right of the plot are mirror images of the plots on the lower left. The stronger the red color is, the stronger the negative correlation and the stronger the blue color is, the stronger the positive correlation is between the variables. We can see the same correlation differences from this plot than from the above correlation matrix but with this visualization the differences are more distinguishable.
+
+The correlation does not imply causation, however it seems that people with higher life expectancy at birth have higher expected years at schooling and the higher adolescent birth rate they have, the higher the maternal mortal ratio is. It also seems that when maternal mortality increases, life expectancy at birth decreases. And when maternal mortality increases, expected years at schooling decrease.
+
+### **2. Principal component analysis (PCA)**
+
+**Principal component analysis** is a dimensionality-reduction method that is used to reduce the dimensionality of large data sets by transforming a large set of variables into smaller one that still contains most of the information in the large set. The PCA is a technique to discover the way in which numeric variables covary. **Singular Value Decomposition (SVD)** is the most important tool for reducing the number of dimensions in multivariate data. The 1st principal component (PC1) captures the maximum amount of variance from the features in the original data. The 2nd principal component (PC2) is orthogonal to the first and it captures the maximum amount of variability left. The same is true for each principal component. They are all uncorreleated and each is less important than the previous one in terms of captured variance.
+
+Let's perform **PCA** on the not standardized human data.
+
+```{r}
+# perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human)
+
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+s
+
+# rounded percentages of variance captured by each PC
+pca_pr <- round(100*s$importance[2,], digits = 1) 
+
+# print out the percentages of variance
+pca_pr
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot
+biplot(pca_human, cex = c(0.8, 1), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+```
+
+Biplot displays the observations by the first two principal components (PCs), PC1 coordinate in x-axis, PC2 coordinate in y-axis. Arrows represent the original variables.
+
+The PCA method is sensitive regarding the variances of the initial variables. If there are large differences between the ranges of the initial variables, the variables with larger ranges will dominate over those with small ranges, which will lead to biased results. We can see here that it seems like PC1 explains most of the variance in the data if the PCA is performed on the not standardized data, the results are biased.
+
+### **3. Repeating PCA after data standardazing**
+
+The point of the data standardization is to standardize the range of the continuous initial variables so that each of them contributes equally to the analysis. By transforming the data to comparable scales with standardization prior to the PCA we can prevent biased results.
+
+Let's **standardize** the data and then repeat the PCA.
+
+```{r}
+# standardize the variables
+human_std <- scale(human)
+
+# print out summaries of the standardized variables
+summary(human_std)
+
+# perform principal component analysis (with the SVD method)
+pca_human2 <- prcomp(human_std)
+
+# create and print out a summary of pca_human
+s2 <- summary(pca_human2)
+s2
+
+# rounded percentages of variance captured by each PC
+pca_pr2 <- round(100*s2$importance[2,], digits = 1) 
+
+# print out the percentages of variance
+pca_pr2
+
+# create object pc_lab to be used as axis labels
+pc_lab2 <- paste0(names(pca_pr2), " (", pca_pr2, "%)")
+
+# draw a biplot
+biplot(pca_human2, cex = c(0.8, 1), col = c("grey40", "deeppink2"), xlab = pc_lab2[1], ylab = pc_lab2[2])
+```
+
+
+**After the standardization and rerunning the PCA analysis** we can see that now higher number of PCs explain the variance in the data. Here in the biplot, the dimensionality of the human data is reduced to two PCs. The PC1 captures 53.6% of the total variance and the PC2 16.2% of the total variance in the original 8 variables. The observations are on x and y coordinates, defined by the two PCs. The arrows visualize the connections between the original variables and the PCs. 
+
+The angle between arrows representing the original variables can be interpret as the correlation between the variables (small angle = high positive correlation) and the angle between a variable and a PC axis can be interpret as the correlation between the two (small angle = high positive correlation). The length of the arrows are proportional to the standard deviations of the variables. 
+
+We can see from the biplot that the expected years at schooling, GNI per capita, life expectancy at birth and ratio of secondary education variables correlate to each other and they are pointing to the same direction as PC1, these variables contribute to same dimension. The variables maternal mortality ratio and adolescent birth rate correlates to each other and are pointing to the direction of PC2, these variables contribute to this dimension.
+
+
+### **4. Multiple correspondence analysis (MCA)**
+
+Let's **explore the tea data**.
+
+```{r}
+library(FactoMineR)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+# read in tea data
+data(tea)
+
+## explore the data
+# structure of the data
+str(tea)
+# dimensions of the data (rows and columns)
+dim(tea)
+```
+
+Let's **choose six variables** for a new tea_time data.
+
+```{r}
+# column names to keep in the dataset
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+
+# select the 'keep_columns' to create a new dataset
+tea_time <- dplyr::select(tea, one_of(keep_columns))
+
+# structure of the data
+str(tea_time)
+# dimensions of the data (rows and columns)
+dim(tea_time)
+```
+
+Let's **visualize** the tea_time dataset.
+
+```{r}
+# visualize the tea_time dataset
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+The tea_time dataframe has 6 variables (columns) and 300 observations (rows). We can see from the barplots the distributions (frequencies for each questionnaire answers) of each factor (categorical) variables. The data consern a questionnaire on tea.
+
+**Multiple correspondence analysis** (MCA) is also a dimensionality reduction method, it analyses the pattern of relationships of several categorical variables. It's a method to analyze qualitative data and it is an extension of Correspondence analysis (CA). MCA can be used to detect patterns or structure in the data as well as in dimension reduction. 
+
+
+Let's perform **MCA** with the MCA() function on the tea_time data.
+
+```{r}
+# multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+
+# summary of the model
+summary(mca)
+
+# visualize MCA
+plot(mca, invisible=c("ind"), habillage = "quali", graph.type = "classic")
+```
+
+The **MCA summary** contains eigenvalues and individuals. The eigenvalues summary gives the variances and the percentage of variances retained by each dimension. The individuals summary gives the individual coordinates, individuals contribution (%) on the dimension and the cos2 (the squared correlations) on the dimensions. The categories summary gives the coordinates of the contribution (%), the cos2 and v.test value. The categorical summary gives the squared correlation between each variable and the dimensions.
+
+The **MCA biplot** shows the variables on the first two dimensions, the distance between variable categories gives a measure of their similarity. Colors represent different variables. The biplot helps to identify variables that are most correlated with each dimension. It can be seen from the biplot that the questionnaire answers tea shop and unpackaged are the most correlated with dimension 1, and the variable other is the most correlated with dimension 2, for example. The dimension 1 captures 15.24% of the total variance and the dimension 2 14.23% of the total variance in these 6 variables.
+

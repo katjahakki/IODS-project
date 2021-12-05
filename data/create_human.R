@@ -82,3 +82,184 @@ setwd("~/IODS-project")
 
 # save the human dataset to the ‘data’ folder, using write.csv() 
 write.csv(human, '~/IODS-project/data/human.csv', row.names=FALSE)
+
+####################################################################
+
+# Week 5: Data wrangling
+date()
+
+# read in human data
+human <- read.csv('~/IODS-project/data/human.csv')
+
+## explore the dataset
+# structure
+str(human)
+# dimensions (rows and columns)
+dim(human)
+# print out summaries of the variables
+summary(human)
+
+# transform the Gross National Income (GNI) variable to numeric and remove the commas from the variable
+human <- mutate(human, GNI_per_capita = as.numeric(gsub(",","", GNI_per_capita)))
+
+# check the structure of the GNI column in 'human'
+str(human$GNI_per_capita)
+
+# exclude unneeded variables: keep only the columns matching the following variable names
+# "Country", "Edu2.FM", "Labo.FM", "Edu.Exp", "Life.Exp",
+# "GNI", "Mat.Mor", "Ado.Birth", "Parli.F"
+
+# columns to keep
+keep <- c("Country", "ratio_sec_edu", "ratio_labour", "life_exp_birth", "exp_years_edu", "GNI_per_capita", "mat_mort_ratio", "adol_birth_rate", "repr_parl")
+
+# select the 'keep' columns
+human <- dplyr::select(human, one_of(keep))
+
+# print out a completeness indicator of the 'human' data
+complete.cases(human)
+
+# print out the data along with a completeness indicator as the last column
+data.frame(human[-1], comp = complete.cases(human))
+
+# remove all rows with missing NA values
+human <- dplyr::filter(human, complete.cases(human))
+
+# look at the last 10 observations
+tail(human, 10)
+
+## remove the observations which relate to regions instead of countries
+# last indice we want to keep
+last <- nrow(human) - 7
+
+# choose everything until the last 7 observations
+human <- human[1:last, ]
+
+# add countries as rownames
+rownames(human) <- human$Country
+
+# remove the Country variable from the data
+human <- dplyr::select(human, -Country)
+
+# check the data
+str(human)
+head(human)
+# the human data now has 155 observations and 8 variables.
+
+# set the working directory of this R session the iods project folder
+setwd("~/IODS-project")
+
+# save the human dataset to the ‘data’ folder, including rownames, using write.csv() 
+write.table(human, '~/IODS-project/data/human.csv', row.names = TRUE)
+
+#######################################################################
+
+#### Week 5: Analysis exercise
+date()
+
+# read in human data
+human <- read.table('~/IODS-project/data/human.csv')
+
+## graphical overview of the data
+# first six observations of the human data
+head(human)
+# structure of the human data
+str(human)
+# basic statistics of the human data
+summary(human)
+
+# access GGally
+library(GGally)
+# access dplyr
+library(dplyr)
+# access corrplot
+library(corrplot)
+
+# visualize the human data variables
+ggpairs(human)
+
+# compute the correlation matrix and visualize it with corrplot
+cor(human) %>% corrplot
+
+# perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human)
+
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+s
+
+# rounded percentages of variance captured by each PC
+pca_pr <- round(100*s$importance[2,], digits = 1) 
+
+# print out the percentages of variance
+pca_pr
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot
+biplot(pca_human, cex = c(0.8, 1), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+
+# standardize the variables
+human_std <- scale(human)
+
+# print out summaries of the standardized variables
+summary(human_std)
+
+# perform principal component analysis (with the SVD method)
+pca_human2 <- prcomp(human_std)
+
+# create and print out a summary of pca_human
+s2 <- summary(pca_human2)
+s2
+
+# rounded percentages of variance captured by each PC
+pca_pr2 <- round(100*s2$importance[2,], digits = 1) 
+
+# print out the percentages of variance
+pca_pr2
+
+# create object pc_lab to be used as axis labels
+pc_lab2 <- paste0(names(pca_pr2), " (", pca_pr2, "%)")
+
+# draw a biplot
+biplot(pca_human2, cex = c(0.8, 1), col = c("grey40", "deeppink2"), xlab = pc_lab2[1], ylab = pc_lab2[2])
+
+
+# install.packages('FactoMineR')
+library(FactoMineR)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+# read in tea data
+data(tea)
+
+## explore the data
+# structure of the data
+str(tea)
+# dimensions of the data (rows and columns)
+dim(tea)
+
+# column names to keep in the dataset
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+
+# select the 'keep_columns' to create a new dataset
+tea_time <- dplyr::select(tea, one_of(keep_columns))
+
+# structure of the tea_time data
+str(tea_time)
+# dimensions of the data (rows and columns)
+dim(tea_time)
+
+# visualize the tea_time dataset
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+# multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+
+# summary of the model
+summary(mca)
+
+# visualize MCA
+plot(mca, invisible=c("ind"), habillage = "quali", graph.type = "classic")
+
